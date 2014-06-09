@@ -19,7 +19,7 @@ Find the distance (in km) between two points of latitude and longitude
     
 Find a range of latitude and longitude for a distance around a point of latitude and longitude.
 
-    (neighborhood {:latitude 33 :longitude -44 :distance-from 200})
+    (haversine/neighborhood {:latitude 33 :longitude -44 :distance-from 200})
     => {:maxlatitude 34.8018018018018
         :minlatitude 31.1981981981982
         :maxlongitude -26.774774136870302
