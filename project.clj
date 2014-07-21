@@ -1,4 +1,4 @@
-(defproject haversine "0.1.0"
+(defproject haversine "0.1.1"
   :description "Find the great circle distance between two points of lat/log on a sphere (approximately Earth)"
   :url "https://github.com/ThomasMeier/haversine"
   :license {:name "Eclipse Public License"

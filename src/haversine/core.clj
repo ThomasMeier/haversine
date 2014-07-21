@@ -7,12 +7,16 @@
 ;; surface.
 (def earth-radius "In kilometers" 6372.8)
 
-(defn alpha
+(defn- sin2
+  "Sine squared"
+  [theta]
+  (* (Math/sin theta) (Math/sin theta)))
+
+(defn- alpha
   "Trigonometric calculations for use in haversine."
   [lat1 lat2 delta-lat delta-long]
-  (+ (* (Math/sin (/ delta-lat 2)) (Math/sin (/ delta-lat 2)))
-     (* (Math/sin (/ delta-long 2)) (Math/sin (/ delta-long 2))
-        (Math/cos lat1) (Math/cos lat2))))
+  (+ (sin2 (/ delta-lat 2))
+     (* (sin2 (/ delta-long 2)) (Math/cos lat1) (Math/cos lat2))))
 
 (defn haversine
   "Distance in km between two points of lat/long. Supply two maps of latitutde and longitude."
@@ -22,7 +26,8 @@
         delta-long (Math/toRadians (- long2 long1))
         lat1 (Math/toRadians lat1)
         lat2 (Math/toRadians lat2)]
-    (* earth-radius 2 (Math/asin (Math/sqrt (alpha lat1 lat2 delta-lat delta-long))))))
+    (* earth-radius 2
+       (Math/asin (Math/sqrt (alpha lat1 lat2 delta-lat delta-long))))))
 
 ;; This next section is derived from the Haversine, solving for the lat/long
 ;; required for the distance parameter to be satisfied. This will provide
@@ -33,21 +38,24 @@
 ;; of latitude. It makes the algebra a little easier, but introduces an error
 ;; of up to ~0.75 kilometers, depending on how far from the equator you
 ;; go.
-(defn anti-alpha
+(defn- anti-alpha
   "Finding the alpha value from distance and known values."
   [distance]
-  (Math/sin (/ distance (* earth-radius 2))))
+  (sin2 (/ distance (* earth-radius 2))))
 
-(defn delta-longitude
-  "Find the difference in longitude required"
+(defn- delta-longitude
+  "Find the difference in lognitude"
   [lat1 lat2 distance]
-  (Math/toDegrees
-  (* 2 (Math/asin
-        (Math/sqrt
-         (/ (- (anti-alpha distance)
-               (* (Math/sin (/ (- (Math/toRadians lat1) (Math/toRadians lat2)) 2))
-                  (Math/sin (/ (- (Math/toRadians lat1) (Math/toRadians lat2)) 2))))
-            (* (Math/cos (Math/toRadians lat1)) (Math/cos (Math/toRadians lat2)))))))))
+  (let [lat1 (Math/toRadians lat1)
+        lat2 (Math/toRadians lat2)
+        dlat (Math/abs (- lat1 lat2))
+        alpha0 (anti-alpha distance)]
+    (Math/toDegrees
+     (* 2
+        (Math/asin
+         (Math/sqrt
+          (/ alpha0
+             (* (Math/cos lat1) (Math/cos lat2)))))))))
 
 (defn neighborhood
   "Given a lat/long/distance map, this will provide a min/max lat/long map"
