@@ -3028,7 +3028,7 @@ net.brehaut.ClojureTools = (function (SH) {
     build_tree: build_tree
   };
 })(SyntaxHighlighter);
-</script><title>haversine -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">haversine</h1><h2 class="project-version">0.1.0</h2><br /><p>Find the great circle distance between two points of lat/log on a sphere (approximately Earth)</p>
+</script><title>haversine -- Marginalia</title></head><body><table><tr><td class="docs"><div class="header"><h1 class="project-name">haversine</h1><h2 class="project-version">0.1.1</h2><br /><p>Find the great circle distance between two points of lat/log on a sphere (approximately Earth)</p>
 </div><div class="dependencies"><h3>dependencies</h3><table><tr><td class="dep-name">org.clojure/clojure</td><td class="dotted"><hr /></td><td class="dep-version">1.5.1</td></tr></table></div></td><td class="codes" style="text-align: center; vertical-align: middle;color: #666;padding-right:20px"><br /><br /><br />(this space intentionally left almost blank)</td></tr><tr><td class="docs"><div class="toc"><a name="toc"><h3>namespaces</h3></a><ul><li><a href="#haversine.core">haversine.core</a></li></ul></div></td><td class="codes">&nbsp;</td></tr><tr><td class="docs"><div class="docs-header"><a class="anchor" href="#haversine.core" name="haversine.core"><h1 class="project-name">haversine.core</h1><a class="toc-link" href="#toc">toc</a></a></div></td><td class="codes" /></tr><tr><td class="docs"><p>The haversine method is an approximation of great circle distance.</p>
 </td><td class="codes"><pre class="brush: clojure">(ns haversine.core)</pre></td></tr><tr><td class="docs"><p>In kilometers</p>
 
@@ -3036,12 +3036,14 @@ net.brehaut.ClojureTools = (function (SH) {
 Earth is not a perfect sphere. There will be some discrepencies, typically
 overestimation, since the great circle will not conform to a rough
 surface.</p>
-</td><td class="codes"><pre class="brush: clojure">(def earth-radius  6372.8)</pre></td></tr><tr><td class="docs"><p>Trigonometric calculations for use in haversine.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn alpha
+</td><td class="codes"><pre class="brush: clojure">(def earth-radius  6372.8)</pre></td></tr><tr><td class="docs"><p>Sine squared</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- sin2
+  [theta]
+  (* (Math/sin theta) (Math/sin theta)))</pre></td></tr><tr><td class="docs"><p>Trigonometric calculations for use in haversine.</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- alpha
   [lat1 lat2 delta-lat delta-long]
-  (+ (* (Math/sin (/ delta-lat 2)) (Math/sin (/ delta-lat 2)))
-     (* (Math/sin (/ delta-long 2)) (Math/sin (/ delta-long 2))
-        (Math/cos lat1) (Math/cos lat2))))</pre></td></tr><tr><td class="docs"><p>Distance in km between two points of lat/long. Supply two maps of latitutde and longitude.</p>
+  (+ (sin2 (/ delta-lat 2))
+     (* (sin2 (/ delta-long 2)) (Math/cos lat1) (Math/cos lat2))))</pre></td></tr><tr><td class="docs"><p>Distance in km between two points of lat/long. Supply two maps of latitutde and longitude.</p>
 </td><td class="codes"><pre class="brush: clojure">(defn haversine
   [{lat1 :latitude long1 :longitude}
    {lat2 :latitude long2 :longitude}]
@@ -3049,7 +3051,8 @@ surface.</p>
         delta-long (Math/toRadians (- long2 long1))
         lat1 (Math/toRadians lat1)
         lat2 (Math/toRadians lat2)]
-    (* earth-radius 2 (Math/asin (Math/sqrt (alpha lat1 lat2 delta-lat delta-long))))))</pre></td></tr><tr><td class="docs"><p>Finding the alpha value from distance and known values.</p>
+    (* earth-radius 2
+       (Math/asin (Math/sqrt (alpha lat1 lat2 delta-lat delta-long))))))</pre></td></tr><tr><td class="docs"><p>Finding the alpha value from distance and known values.</p>
 
 <p>This next section is derived from the Haversine, solving for the lat/long
 required for the distance parameter to be satisfied. This will provide
@@ -3060,18 +3063,21 @@ area, rather than a circular radius.</p>
 of latitude. It makes the algebra a little easier, but introduces an error
 of up to ~0.75 kilometers, depending on how far from the equator you
 go.</p>
-</td><td class="codes"><pre class="brush: clojure">(defn anti-alpha
+</td><td class="codes"><pre class="brush: clojure">(defn- anti-alpha
   [distance]
-  (Math/sin (/ distance (* earth-radius 2))))</pre></td></tr><tr><td class="docs"><p>Find the difference in longitude required</p>
-</td><td class="codes"><pre class="brush: clojure">(defn delta-longitude
+  (sin2 (/ distance (* earth-radius 2))))</pre></td></tr><tr><td class="docs"><p>Find the difference in lognitude</p>
+</td><td class="codes"><pre class="brush: clojure">(defn- delta-longitude
   [lat1 lat2 distance]
-  (Math/toDegrees
-  (* 2 (Math/asin
-        (Math/sqrt
-         (/ (- (anti-alpha distance)
-               (* (Math/sin (/ (- (Math/toRadians lat1) (Math/toRadians lat2)) 2))
-                  (Math/sin (/ (- (Math/toRadians lat1) (Math/toRadians lat2)) 2))))
-            (* (Math/cos (Math/toRadians lat1)) (Math/cos (Math/toRadians lat2)))))))))</pre></td></tr><tr><td class="docs"><p>Given a lat/long/distance map, this will provide a min/max lat/long map</p>
+  (let [lat1 (Math/toRadians lat1)
+        lat2 (Math/toRadians lat2)
+        dlat (Math/abs (- lat1 lat2))
+        alpha0 (anti-alpha distance)]
+    (Math/toDegrees
+     (* 2
+        (Math/asin
+         (Math/sqrt
+          (/ alpha0
+             (* (Math/cos lat1) (Math/cos lat2)))))))))</pre></td></tr><tr><td class="docs"><p>Given a lat/long/distance map, this will provide a min/max lat/long map</p>
 </td><td class="codes"><pre class="brush: clojure">(defn neighborhood
   [{lat :latitude long :longitude distance :distance-from}]
   (let [lat2 (double (/ distance 111))
